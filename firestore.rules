@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función auxiliar: comprobar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Función auxiliar: comprobar rol de administrador (asumiendo que se guarda en claims o se lee del documento)
+    // Para no hacer read extra en cada consulta, Firebase recomienda setear claims,
+    // o leer el doc del user (consume lecturas). Usaremos read para el MVP.
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'admin';
+    }
+    
+    // 1. Usuarios: Cada usuario puede leer su propio perfil, admin lee todos
+    match /usuarios/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Permitir la creación inicial de perfil al propio usuario. Después, solo admin puede modificar roles.
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update, delete: if isAdmin();
+    }
+    
+    // 2. Configuración: todos leen, solo admin escribe
+    match /configuracion/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // 3. Vendedores, Clientes, Productos, Historial:
+    //    Cualquier autenticado puede leer. Solo admin escribe/modifica/elimina.
+    match /vendedores/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /clientes/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /productos/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /historialAsignaciones/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // 4. Reportes y Detalles:
+    //    Lectura global autenticados.
+    //    Escritura (crear/eliminar) solo admin.
+    match /reportes/{reporteId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      // Subcolección de detalles
+      match /detalles/{detalleId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+  }
+}

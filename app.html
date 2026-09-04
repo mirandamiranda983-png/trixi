@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIXI — Dashboard</title>
+  
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/modules.css">
+
+  <!-- Librerías Externas -->
+  <!-- Chart.js para Dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS para Importar/Exportar Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- jsPDF & AutoTable para Exportar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+  <div id="app">
+    <!-- Overlay para móvil -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <a href="#" class="sidebar-brand" onclick="window.TRIXI.navigate('dashboard')">
+        <div class="sidebar-brand-icon">T</div>
+        <div class="sidebar-brand-text">
+          <div class="sidebar-brand-name">TRIXI</div>
+          <div class="sidebar-brand-sub">Sistema de Ventas</div>
+        </div>
+      </a>
+      
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title">Principal</div>
+        <li class="nav-item" data-label="Dashboard">
+          <a class="nav-link active" data-module="dashboard" onclick="window.TRIXI.navigate('dashboard')">
+            <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item" data-label="Reporte Diario">
+          <a class="nav-link" data-module="generador" onclick="window.TRIXI.navigate('generador')">
+            <span class="nav-icon">⚡</span><span class="nav-label">Reporte Diario</span>
+          </a>
+        </li>
+
+        <div class="sidebar-section-title">Gestión</div>
+        <li class="nav-item" data-label="Vendedores">
+          <a class="nav-link" data-module="vendedores" onclick="window.TRIXI.navigate('vendedores')">
+            <span class="nav-icon">👥</span><span class="nav-label">Vendedores</span>
+          </a>
+        </li>
+        <li class="nav-item" data-label="Clientes">
+          <a class="nav-link" data-module="clientes" onclick="window.TRIXI.navigate('clientes')">
+            <span class="nav-icon">🏢</span><span class="nav-label">Clientes</span>
+          </a>
+        </li>
+        <li class="nav-item" data-label="Productos">
+          <a class="nav-link" data-module="productos" onclick="window.TRIXI.navigate('productos')">
+            <span class="nav-icon">📦</span><span class="nav-label">Productos</span>
+          </a>
+        </li>
+        <li class="nav-item" data-label="Asignaciones">
+          <a class="nav-link" data-module="asignaciones" onclick="window.TRIXI.navigate('asignaciones')">
+            <span class="nav-icon">🔗</span><span class="nav-label">Asignaciones</span>
+          </a>
+        </li>
+
+        <div class="sidebar-section-title">Herramientas</div>
+        <li class="nav-item" data-label="Historial">
+          <a class="nav-link" data-module="reportes" onclick="window.TRIXI.navigate('reportes')">
+            <span class="nav-icon">📂</span><span class="nav-label">Historial Reportes</span>
+          </a>
+        </li>
+        <li class="nav-item" data-label="Importar">
+          <a class="nav-link" data-module="importacion" onclick="window.TRIXI.navigate('importacion')">
+            <span class="nav-icon">📥</span><span class="nav-label">Importar Datos</span>
+          </a>
+        </li>
+
+        <div class="sidebar-section-title">Sistema</div>
+        <li class="nav-item" data-label="Configuración">
+          <a class="nav-link" data-module="configuracion" onclick="window.TRIXI.navigate('configuracion')">
+            <span class="nav-icon">⚙️</span><span class="nav-label">Configuración</span>
+          </a>
+        </li>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" id="user-avatar">?</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="user-name">Usuario</div>
+            <div class="sidebar-user-role" id="user-role">Admin</div>
+          </div>
+        </div>
+        <button class="sidebar-collapse-btn" id="btn-collapse-sidebar" title="Colapsar menú">◀</button>
+      </div>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <main id="main-area">
+      <!-- HEADER -->
+      <header id="main-header">
+        <div class="header-left">
+          <button class="header-menu-btn" id="btn-mobile-menu">☰</button>
+          <div class="header-breadcrumb">
+            TRIXI / <span class="current-module" id="breadcrumb-module">Dashboard</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="header-date" id="header-date-display"></span>
+          <button class="header-action-btn" id="btn-logout" title="Cerrar sesión">🚪</button>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <div id="content-area">
+        
+        <!-- MODULE: DASHBOARD -->
+        <section id="mod-dashboard" class="module-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Dashboard</h1>
+              <p class="page-subtitle">Resumen general del sistema de ventas.</p>
+            </div>
+          </div>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-blue">👥</div>
+              <div class="stat-info">
+                <div class="stat-label">Vendedores</div>
+                <div class="stat-value" id="dash-vend">0</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-green">🏢</div>
+              <div class="stat-info">
+                <div class="stat-label">Clientes</div>
+                <div class="stat-value" id="dash-cli">0</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-purple">📦</div>
+              <div class="stat-info">
+                <div class="stat-label">Productos</div>
+                <div class="stat-value" id="dash-prod">0</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon stat-icon-yellow">📂</div>
+              <div class="stat-info">
+                <div class="stat-label">Reportes Generados</div>
+                <div class="stat-value" id="dash-rep">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-charts">
+            <div class="chart-card">
+              <div class="card-header"><h3 class="card-title">Ventas últimos 7 días</h3></div>
+              <div class="chart-container"><canvas id="dash-chart"></canvas></div>
+            </div>
+            <div class="d-grid gap-4">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Total Hoy</h3></div>
+                <div class="card-body text-center p-6">
+                  <div class="text-3xl font-bold text-success" id="dash-hoy">Q 0.00</div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Total del Mes</h3></div>
+                <div class="card-body text-center p-6">
+                  <div class="text-2xl font-bold text-primary-c" id="dash-mes">Q 0.00</div>
+                </div>
+              </div>
+              <div class="card" style="flex:1;">
+                <div class="card-header"><h3 class="card-title">Actividad Reciente</h3></div>
+                <div class="recent-activity" id="dash-activity">
+                  <!-- JS Injects -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE: VENDEDORES -->
+        <section id="mod-vendedores" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Vendedores</h1>
+              <p class="page-subtitle">Gestiona el catálogo de vendedores del sistema.</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary" id="btn-nuevo-vendedor">+ Nuevo Vendedor</button>
+            </div>
+          </div>
+
+          <div class="vendedor-stats">
+            <div class="vendor-stat-box"><div class="vendor-stat-val" id="vend-total">0</div><div class="vendor-stat-lbl">Total Vendedores</div></div>
+            <div class="vendor-stat-box"><div class="vendor-stat-val text-success" id="vend-activos">0</div><div class="vendor-stat-lbl">Activos</div></div>
+            <div class="vendor-stat-box"><div class="vendor-stat-val text-warning" id="vend-inac">0</div><div class="vendor-stat-lbl">Inactivos</div></div>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input class="form-control w-full" id="search-vendedores" placeholder="Buscar por código o nombre...">
+              </div>
+              <select class="form-control" id="filter-vend-estado" style="width:160px;">
+                <option value="todos">Todos los estados</option>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="vendedores-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="codigo">Código<span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="nombre">Nombre<span class="sort-icon">↕</span></th>
+                  <th>Clientes Asignados</th>
+                  <th>Estado</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="vendedores-tbody"></tbody>
+            </table>
+            <div id="vendedores-pagination"></div>
+          </div>
+        </section>
+
+        <!-- MODULE: CLIENTES -->
+        <section id="mod-clientes" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Clientes</h1>
+              <p class="page-subtitle">Administra los clientes y su información de contacto.</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary" id="btn-nuevo-cliente">+ Nuevo Cliente</button>
+            </div>
+          </div>
+
+          <div class="vendedor-stats">
+            <div class="vendor-stat-box"><div class="vendor-stat-val" id="cli-total">0</div><div class="vendor-stat-lbl">Total Clientes</div></div>
+            <div class="vendor-stat-box"><div class="vendor-stat-val text-success" id="cli-activos">0</div><div class="vendor-stat-lbl">Activos</div></div>
+            <div class="vendor-stat-box"><div class="vendor-stat-val text-danger" id="cli-sin-vendedor">0</div><div class="vendor-stat-lbl">Sin Asignar</div></div>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-left" style="flex:1;">
+              <div class="search-wrapper" style="width:100%; max-width:400px;">
+                <span class="search-icon">🔍</span>
+                <input class="form-control" id="search-clientes" placeholder="Buscar por código, nombre, teléfono...">
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <select class="form-control" id="filter-cli-vendedor" style="width:180px;">
+                <option value="todos">Todos los vendedores</option>
+              </select>
+              <select class="form-control" id="filter-cli-estado" style="width:150px;">
+                <option value="todos">Todos los estados</option>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="clientes-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="codigo">Código<span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="nombre">Cliente<span class="sort-icon">↕</span></th>
+                  <th>Dirección</th>
+                  <th>Teléfono</th>
+                  <th>Vendedor</th>
+                  <th>Estado</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="clientes-tbody"></tbody>
+            </table>
+            <div id="clientes-pagination"></div>
+          </div>
+        </section>
+
+        <!-- MODULE: PRODUCTOS -->
+        <section id="mod-productos" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Productos</h1>
+              <p class="page-subtitle">Catálogo de productos, precios y rangos de generación.</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary" id="btn-nuevo-producto">+ Nuevo Producto</button>
+            </div>
+          </div>
+
+          <div class="vendedor-stats">
+            <div class="vendor-stat-box"><div class="vendor-stat-val" id="prod-total">0</div><div class="vendor-stat-lbl">Total Productos</div></div>
+            <div class="vendor-stat-box"><div class="vendor-stat-val text-success" id="prod-activos">0</div><div class="vendor-stat-lbl">Activos</div></div>
+            <div class="vendor-stat-box"><div class="vendor-stat-val text-info" id="prod-cats">0</div><div class="vendor-stat-lbl">Categorías</div></div>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-left" style="flex:1;">
+              <div class="search-wrapper" style="width:100%; max-width:400px;">
+                <span class="search-icon">🔍</span>
+                <input class="form-control" id="search-productos" placeholder="Buscar por código o nombre...">
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <select class="form-control" id="filter-prod-categoria" style="width:180px;">
+                <option value="todos">Todas las categorías</option>
+              </select>
+              <select class="form-control" id="filter-prod-estado" style="width:150px;">
+                <option value="todos">Todos los estados</option>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="productos-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="codigo">Código<span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="nombre">Producto / Medida<span class="sort-icon">↕</span></th>
+                  <th>Categoría</th>
+                  <th class="sortable text-right" data-sort="precio">Precio<span class="sort-icon">↕</span></th>
+                  <th class="text-center">Rango Mín-Máx</th>
+                  <th>Estado</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productos-tbody"></tbody>
+            </table>
+            <div id="productos-pagination"></div>
+          </div>
+        </section>
+
+        <!-- MODULE: ASIGNACIONES -->
+        <section id="mod-asignaciones" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Asignaciones</h1>
+              <p class="page-subtitle">Vincula clientes a vendedores para la generación de reportes.</p>
+            </div>
+          </div>
+          <div id="asig-container"></div>
+        </section>
+
+        <!-- MODULE: GENERADOR (REPORTE DIARIO) -->
+        <section id="mod-generador" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Reporte Diario</h1>
+              <p class="page-subtitle">Genera el reporte de ventas con datos pseudoaleatorios reproducibles.</p>
+            </div>
+            <div class="page-actions" id="gen-actions" class="hidden">
+              <button class="btn btn-outline" id="btn-cancelar-gen">Cancelar</button>
+              <button class="btn btn-success" id="btn-registrar">💾 Registrar en Firebase</button>
+            </div>
+          </div>
+
+          <div class="generator-layout">
+            <!-- Columna Izquierda: Configuración -->
+            <div class="generator-config">
+              <div class="config-section">
+                <div class="config-section-title">Datos Básicos</div>
+                <div class="form-group">
+                  <label class="form-label">Fecha del Reporte</label>
+                  <input type="date" class="form-control" id="gen-fecha" required>
+                </div>
+              </div>
+              
+              <div class="config-section">
+                <div class="config-section-title">Clientes por Vendedor</div>
+                <div class="range-inputs">
+                  <div class="form-group">
+                    <label class="form-label text-xs">Mínimo</label>
+                    <input type="number" class="form-control" id="gen-cli-min" min="1" value="15">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label text-xs">Máximo</label>
+                    <input type="number" class="form-control" id="gen-cli-max" min="1" value="20">
+                  </div>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">Productos por Cliente</div>
+                <div class="range-inputs">
+                  <div class="form-group">
+                    <label class="form-label text-xs">Mínimo</label>
+                    <input type="number" class="form-control" id="gen-prod-min" min="1" value="1">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label text-xs">Máximo</label>
+                    <input type="number" class="form-control" id="gen-prod-max" min="1" value="3">
+                  </div>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="config-section-title">Cantidades Generales (Fallback)</div>
+                <div class="range-inputs">
+                  <div class="form-group">
+                    <label class="form-label text-xs">Mínima</label>
+                    <input type="number" class="form-control" id="gen-cant-min" min="1" value="1">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label text-xs">Máxima</label>
+                    <input type="number" class="form-control" id="gen-cant-max" min="1" value="20">
+                  </div>
+                </div>
+                <div class="text-xs text-muted mt-2">
+                  (Si el producto tiene rango propio, se respetará aquel)
+                </div>
+              </div>
+
+              <div class="p-4">
+                <button class="btn btn-primary w-full" id="btn-generar">
+                  <span class="btn-spinner"></span>
+                  ▶ Generar Reporte
+                </button>
+                <button class="btn btn-outline-primary w-full hidden" id="btn-regenerar">
+                  <span class="btn-spinner"></span>
+                  🔄 Regenerar Diferente
+                </button>
+              </div>
+            </div>
+
+            <!-- Columna Derecha: Vista Previa -->
+            <div class="preview-area" id="gen-preview-content">
+              <!-- Renderizado por JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE: REPORTES (HISTORIAL) -->
+        <section id="mod-reportes" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Historial de Reportes</h1>
+              <p class="page-subtitle">Consulta y exporta los reportes diarios previamente generados.</p>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="search-wrapper" style="max-width:300px; width:100%;">
+              <span class="search-icon">🔍</span>
+              <input class="form-control" id="search-reportes" placeholder="Buscar por fecha (YYYY-MM-DD)...">
+            </div>
+          </div>
+
+          <div id="reportes-list" class="d-grid gap-3"></div>
+          <div id="reportes-pagination" class="mt-4"></div>
+        </section>
+
+        <!-- MODULE: IMPORTACION -->
+        <section id="mod-importacion" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Importación de Datos</h1>
+              <p class="page-subtitle">Sube archivos CSV o XLSX para importar catálogos masivamente.</p>
+            </div>
+          </div>
+
+          <!-- Paso 1 -->
+          <div id="import-step-1" class="card" style="max-width: 800px; margin: 0 auto;">
+            <div class="card-body">
+              <div class="form-group mb-6">
+                <label class="form-label text-base font-semibold">1. Selecciona el tipo de dato a importar</label>
+                <select class="form-control form-control-lg" id="import-type">
+                  <option value="vendedores">👥 Vendedores</option>
+                  <option value="clientes">🏢 Clientes</option>
+                  <option value="productos">📦 Productos</option>
+                </select>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label text-base font-semibold">2. Sube tu archivo</label>
+                <div class="file-upload-area" id="import-upload-area">
+                  <div class="file-upload-icon">📄</div>
+                  <div class="file-upload-title">Arrastra tu archivo aquí</div>
+                  <div class="file-upload-desc">Archivos soportados: .csv, .xlsx</div>
+                  <div class="file-upload-btn-wrap">
+                    <button class="btn btn-outline">Explorar archivos</button>
+                  </div>
+                </div>
+                <input type="file" id="import-file" class="hidden" accept=".csv, .xlsx">
+              </div>
+
+              <div class="alert alert-info">
+                <span class="alert-icon">ℹ️</span>
+                <div class="alert-body">
+                  <strong>Formato requerido:</strong> La primera fila debe contener los encabezados exactos (ej. codigo, nombre, estado). Los datos existentes con el mismo código serán ignorados.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paso 2: Preview -->
+          <div id="import-step-2" class="hidden">
+            <div class="import-preview-stats">
+              <div class="import-stat valid"><div class="import-stat-val" id="import-stat-valid">0</div><div class="import-stat-lbl">Válidos (Listos)</div></div>
+              <div class="import-stat dupes"><div class="import-stat-val" id="import-stat-dupes">0</div><div class="import-stat-lbl">Duplicados (Ignorados)</div></div>
+              <div class="import-stat errors"><div class="import-stat-val" id="import-stat-errors">0</div><div class="import-stat-lbl">Errores (Ignorados)</div></div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Vista Previa de Importación</h3>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline" id="btn-import-cancel">Cancelar</button>
+                  <button class="btn btn-success" id="btn-import-confirm">Importar Válidos</button>
+                </div>
+              </div>
+              <div class="table-wrapper" style="border-radius:0; border:none; border-top:1px solid var(--border-color);">
+                <table class="data-table">
+                  <thead><tr><th class="text-center" style="width:40px;"></th><th>Código</th><th>Nombre</th><th>Estado/Errores</th></tr></thead>
+                  <tbody id="import-preview-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE: CONFIGURACION -->
+        <section id="mod-configuracion" class="module-section hidden">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Configuración Global</h1>
+              <p class="page-subtitle">Parámetros del sistema y reglas de negocio.</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary" id="btn-save-config">💾 Guardar Configuración</button>
+            </div>
+          </div>
+
+          <div style="max-width: 800px;">
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <div class="config-section-icon">🏢</div>
+                <div>
+                  <div class="config-section-title">Datos de la Empresa</div>
+                  <div class="config-section-desc">Usado en encabezados y exportaciones PDF.</div>
+                </div>
+              </div>
+              <div class="config-fields">
+                <div class="form-group mb-0">
+                  <label class="form-label">Nombre de la Empresa</label>
+                  <input type="text" class="form-control" id="cfg-empresa">
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <div class="config-section-icon">⚙️</div>
+                <div>
+                  <div class="config-section-title">Reglas del Generador Diario</div>
+                  <div class="config-section-desc">Valores por defecto cargados al iniciar el generador de reportes.</div>
+                </div>
+              </div>
+              <div class="config-fields">
+                <div class="form-row form-row-2 mb-4">
+                  <div class="form-group mb-0">
+                    <label class="form-label">Mín. Clientes por Vendedor</label>
+                    <input type="number" class="form-control" id="cfg-cli-min">
+                  </div>
+                  <div class="form-group mb-0">
+                    <label class="form-label">Máx. Clientes por Vendedor</label>
+                    <input type="number" class="form-control" id="cfg-cli-max">
+                  </div>
+                </div>
+                <div class="form-row form-row-2 mb-4">
+                  <div class="form-group mb-0">
+                    <label class="form-label">Mín. Productos por Cliente</label>
+                    <input type="number" class="form-control" id="cfg-prod-min">
+                  </div>
+                  <div class="form-group mb-0">
+                    <label class="form-label">Máx. Productos por Cliente</label>
+                    <input type="number" class="form-control" id="cfg-prod-max">
+                  </div>
+                </div>
+                <div class="form-row form-row-2 mb-0">
+                  <div class="form-group mb-0">
+                    <label class="form-label">Cantidad General Mínima</label>
+                    <input type="number" class="form-control" id="cfg-cant-min">
+                  </div>
+                  <div class="form-group mb-0">
+                    <label class="form-label">Cantidad General Máxima</label>
+                    <input type="number" class="form-control" id="cfg-cant-max">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <div class="config-section-icon">💰</div>
+                <div>
+                  <div class="config-section-title">Formato de Moneda</div>
+                  <div class="config-section-desc">Símbolo y decimales visualizados en la aplicación.</div>
+                </div>
+              </div>
+              <div class="config-fields">
+                <div class="form-row form-row-2 mb-0">
+                  <div class="form-group mb-0">
+                    <label class="form-label">Símbolo Monetario</label>
+                    <input type="text" class="form-control" id="cfg-moneda">
+                  </div>
+                  <div class="form-group mb-0">
+                    <label class="form-label">Decimales</label>
+                    <input type="number" class="form-control" id="cfg-decimales" min="0" max="4">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- Lógica de Inicio SPA y Coordinador -->
+  <script type="module">
+    import { initAuth, logout, getProfile, getUser } from './js/auth.js';
+    import { navigateTo } from './js/ui.js';
+    import { getInitials } from './js/utils.js';
+
+    // Importación de init functions de cada módulo
+    import { initDashboard } from './js/dashboard.js';
+    import { initVendedores, exposeGlobals as expVend } from './js/vendedores.js';
+    import { initClientes, exposeGlobals as expCli } from './js/clientes.js';
+    import { initProductos, exposeGlobals as expProd } from './js/productos.js';
+    import { initAsignaciones, exposeGlobals as expAsig } from './js/asignaciones.js';
+    import { initGenerador } from './js/generador.js';
+    import { initReportes, exposeGlobals as expRep } from './js/reportes.js';
+    import { initImportacion } from './js/importacion.js';
+    import { initConfiguracion, getConfig } from './js/configuracion.js';
+
+    // Exponer funciones globales necesarias para onclick handlers en HTML
+    expVend(); expCli(); expProd(); expAsig(); expRep();
+
+    window.TRIXI = window.TRIXI || {};
+    window.TRIXI.navigate = navigateTo;
+
+    // Estado inicial de carga de módulos (para no cargar el mismo módulo 2 veces en 1 sesión)
+    const modulesLoaded = {};
+
+    // Iniciar
+    initAuth({
+      onLogin: async (user, profile) => {
+        // UI
+        document.getElementById('user-name').textContent = profile.nombre || 'Usuario';
+        document.getElementById('user-role').textContent = profile.rol === 'admin' ? 'Administrador' : 'Visualizador';
+        document.getElementById('user-avatar').textContent = getInitials(profile.nombre || 'U');
+
+        // Config global
+        window.TRIXI_CONFIG = await getConfig();
+
+        // Mostrar fecha header
+        const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('header-date-display').textContent = new Date().toLocaleDateString('es-GT', opts);
+
+        // Ir a dashboard
+        navigateTo('dashboard');
+      },
+      onLogout: () => {
+        window.location.replace('index.html');
+      }
+    });
+
+    // Event listener del Router / SPA
+    window.addEventListener('trixi:navigate', async (e) => {
+      const mod = e.detail.module;
+      
+      // Siempre refrescar data en Dashboard, Reportes y Asignaciones.
+      // CRUDs normales (vendedores, etc) usan caché interno y recargan al guardar, así que "init" solo corre 1 vez.
+      if (!modulesLoaded[mod] || ['dashboard', 'reportes', 'asignaciones', 'generador'].includes(mod)) {
+        
+        if (mod === 'dashboard') await initDashboard();
+        else if (mod === 'vendedores') await initVendedores();
+        else if (mod === 'clientes') await initClientes();
+        else if (mod === 'productos') await initProductos();
+        else if (mod === 'asignaciones') await initAsignaciones();
+        else if (mod === 'generador') await initGenerador();
+        else if (mod === 'reportes') await initReportes();
+        else if (mod === 'importacion') await initImportacion();
+        else if (mod === 'configuracion') await initConfiguracion();
+
+        modulesLoaded[mod] = true;
+      }
+    });
+
+    // Eventos UI Generales
+    document.getElementById('btn-logout')?.addEventListener('click', logout);
+    
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    document.getElementById('btn-collapse-sidebar')?.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+    });
+
+    document.getElementById('btn-mobile-menu')?.addEventListener('click', () => {
+      sidebar.classList.add('mobile-open');
+      overlay.classList.add('visible');
+    });
+
+    overlay?.addEventListener('click', () => {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('visible');
+    });
+  </script>
+</body>
+</html>

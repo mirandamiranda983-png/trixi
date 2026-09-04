@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIXI — Inicio de Sesión</title>
+  
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/modules.css">
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">T</div>
+      <div class="login-logo-title">TRIXI</div>
+      <div class="login-logo-sub">Sistema de Administración de Ventas</div>
+    </div>
+    
+    <h1 class="login-title">Iniciar Sesión</h1>
+    
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="login-email" class="form-control" required placeholder="admin@empresa.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="login-password" class="form-control" required placeholder="••••••••">
+      </div>
+      
+      <div class="form-error text-center mb-4" id="login-error"></div>
+      
+      <button type="submit" id="login-submit" class="btn btn-primary login-btn">
+        <span class="btn-spinner"></span>
+        Entrar
+      </button>
+    </form>
+    
+    <div class="login-footer">
+      <a href="#" id="login-reset">¿Olvidaste tu contraseña?</a>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- Firebase Auth Observer -->
+  <script type="module">
+    import { initAuth, initLoginPage } from './js/auth.js';
+    
+    initLoginPage();
+    
+    // Si ya está autenticado, redirigir a la app
+    initAuth({
+      onLogin: (user, profile) => {
+        window.location.replace('app.html');
+      },
+      onLogout: () => {
+        // stay here
+      }
+    });
+  </script>
+</body>
+</html>
