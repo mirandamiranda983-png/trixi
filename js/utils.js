@@ -300,3 +300,6 @@ export function deepClone(obj) {
 export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ── Re-exports para compatibilidad cruzada ───────────────────
+export { filterTable } from './ui.js';

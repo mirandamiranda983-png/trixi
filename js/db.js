@@ -155,3 +155,4 @@ export async function importBatch(colPath, records, { onProgress } = {}) {
 
 // Re-exportar operadores de Firestore para uso externo
 export { query, where, orderBy, limit, startAfter };
+export { addDoc };
