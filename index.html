@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trixi · Iniciar sesión</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <h1>Trixi</h1>
+      <p class="sub">Administración de vendedores, clientes y reportes</p>
+      <div id="alert-box"></div>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Correo</label>
+          <input type="email" id="email" required autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="btn-login">Ingresar</button>
+      </form>
+      <p class="small text-muted" style="margin-top:16px;">
+        Los usuarios se crean desde Firebase Authentication (Console) y su perfil/rol
+        en la colección <code>usuarios/{uid}</code>.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { guardPage, login } from "./js/auth.js";
+    import { toast, setLoading } from "./js/utils.js";
+
+    guardPage(); // si ya hay sesión, redirige a dashboard.html
+
+    const form = document.getElementById("login-form");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("btn-login");
+      btn.disabled = true;
+      try {
+        await login(email, password);
+        // onAuthStateChanged en guardPage() se encargará de redirigir
+      } catch (err) {
+        console.error(err);
+        toast(mapAuthError(err.code), "danger");
+        setLoading(false);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    function mapAuthError(code) {
+      const map = {
+        "auth/invalid-credential": "Correo o contraseña incorrectos.",
+        "auth/user-not-found": "No existe un usuario con ese correo.",
+        "auth/wrong-password": "Contraseña incorrecta.",
+        "auth/too-many-requests": "Demasiados intentos. Intenta más tarde.",
+        "auth/invalid-email": "Correo inválido.",
+      };
+      return map[code] || "No se pudo iniciar sesión. Verifica tus datos.";
+    }
+  </script>
+</body>
+</html>

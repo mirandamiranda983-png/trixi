@@ -1,0 +1,91 @@
+rules_version = '2';
+
+// ============================================================
+// REGLAS DE SEGURIDAD — Firestore
+// ============================================================
+// Principios:
+// 1) Nadie no autenticado puede leer ni escribir nada.
+// 2) El rol del usuario se valida contra su documento en
+//    /usuarios/{uid} (o custom claims), NUNCA contra algo que
+//    envíe el propio cliente en la escritura.
+// 3) Ningún módulo usa "allow read, write: if true".
+//
+// Antes de desplegar, crea manualmente en Firestore un documento
+// en /usuarios/{uid-del-admin} con al menos: { rol: "admin" }.
+// El uid debe coincidir con el UID del usuario creado en
+// Firebase Authentication.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function perfil() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function esAdmin() {
+      return estaAutenticado() &&
+             exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+             perfil().rol == 'admin';
+    }
+
+    // Cualquier usuario autenticado con perfil registrado puede leer
+    // (ajusta a esAdmin() si quieres restringir también la lectura).
+    function puedeLeer() {
+      return estaAutenticado() &&
+             exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    match /usuarios/{uid} {
+      allow read: if estaAutenticado() && request.auth.uid == uid;
+      allow write: if esAdmin();
+    }
+
+    match /vendedores/{id} {
+      allow read: if puedeLeer();
+      allow create, update, delete: if esAdmin();
+    }
+
+    match /clientes/{id} {
+      allow read: if puedeLeer();
+      allow create, update, delete: if esAdmin();
+    }
+
+    match /productos/{id} {
+      allow read: if puedeLeer();
+      allow create, update, delete: if esAdmin();
+    }
+
+    match /historialAsignaciones/{id} {
+      allow read: if puedeLeer();
+      allow create: if esAdmin();
+      allow update, delete: if false; // el historial no se modifica ni se borra
+    }
+
+    match /configuracion/{id} {
+      allow read: if puedeLeer();
+      allow write: if esAdmin();
+    }
+
+    match /reportes/{reporteId} {
+      allow read: if puedeLeer();
+      allow create, update: if esAdmin();
+      allow delete: if false; // los reportes se anulan, no se eliminan
+
+      match /detalles/{detalleId} {
+        allow read: if puedeLeer();
+        allow create: if esAdmin();
+        allow update, delete: if false; // el detalle de un reporte registrado es inmutable
+      }
+    }
+
+    // Cualquier otra ruta queda bloqueada por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
